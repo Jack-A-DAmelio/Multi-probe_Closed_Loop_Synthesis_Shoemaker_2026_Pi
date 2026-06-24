@@ -20,8 +20,8 @@ import time
 import threading
 import requests
 
-import hardware
-from controller_state import STATE #imports the ControllerState created on import of controller_state
+import hardware.hardware as hardware
+from server_stuff.controller_state import STATE #imports the ControllerState created on import of controller_state
 
 
 # =========================================================
@@ -71,10 +71,10 @@ def streaming_loop():
         # ---------------------------------------------------------
 
         raw_sample = hardware.read_all_sensors()
-
+        print(raw_sample)  # user-visible debug log
         # Filter sensors based on active experiment configuration
         filtered_sample = STATE.filter_enabled_probes(raw_sample)
-
+        print(len(filtered_sample), "probes sampled:", filtered_sample)  # user-visible debug log
         # ---------------------------------------------------------
         # 2. BUFFER SAMPLE (THREAD-SAFE OPERATION)
         # ---------------------------------------------------------

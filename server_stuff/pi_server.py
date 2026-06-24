@@ -9,10 +9,13 @@ Purpose:
 --------
 Receives control commands from the PC dashboard and updates
 shared controller state (experiment config + streaming control).
+
+Run this script from the above directory with:
+python -m server_stuff.pi_server
 """
 
 from fastapi import FastAPI
-import pi_controller as controller
+import server_stuff.pi_controller as controller
 
 app = FastAPI()
 
@@ -42,6 +45,7 @@ def set_experiment_config(config: dict):
         #first parameter looks for the key, if no such key, the second parameter is given by default
         experiment_id = config.get("experiment_id", None)
         enabled_probes = config.get("enabled_probes", [])
+        print(enabled_probes, "after")
         flush_interval_sec = config.get("flush_interval_sec", 2.0)
         sample_rate_hz = config.get("sample_rate_hz", 100.0)
         # -----------------------------------------------------
@@ -103,3 +107,29 @@ def stop():
     """
     controller.stop_streaming()
     return {"status": "stopped"}
+
+# =========================================================
+# ENTRY POINT
+# =========================================================
+
+if __name__ == "__main__":
+    """
+    Launches the Pi control server.
+
+    Host:
+        0.0.0.0
+        Allows connections from other machines on the network.
+
+    Port:
+        8001
+        Must match PI_URL used by the dashboard.
+    """
+
+    import uvicorn
+
+    uvicorn.run(
+        app,
+        host="0.0.0.0",
+        port=8001,
+        reload=False
+    )
