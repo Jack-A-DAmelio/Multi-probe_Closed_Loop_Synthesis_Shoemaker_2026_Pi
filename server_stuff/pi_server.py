@@ -1,8 +1,8 @@
 """
 Pi server (MINIMAL TEST VERSION)
 
-Author: Undergraduate Research Project
-Date: 2026-06-18
+Author: Jack A. D'Amelio
+Date: 2026-06-24
 Internal Pi-Hardware Version: v0.1
 
 Purpose:

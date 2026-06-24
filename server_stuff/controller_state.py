@@ -1,7 +1,7 @@
 """
 Controller state object.
-Author: Undergraduate Research Project
-Date: 2026-06-18
+Author: Jack A. D'Amelio
+Date: 2026-06-24
 Internal Pi-Hardware Version: v0.1
 
 Purpose:
@@ -42,6 +42,11 @@ class ControllerState:
         # STREAMING STATE
         # =========================================================
 
+        # =========================================================
+        # PC URL
+        # =========================================================
+        self.pc_url = "" # PC ingestion endpoint
+
         self.streaming_active = False
         # Flag checked by streaming loop to determine whether to run
 
@@ -59,11 +64,11 @@ class ControllerState:
         # Prevents race conditions between:
         # - streaming thread (writes)
         # - server endpoint (reads)
-
+        self.flush_interval_sec = 2.0 # flush interval = batch transmission interval
         # =========================================================
         # EXPERIMENT STATE
         # =========================================================
-
+        self.sample_rate_hz = 1  # hardware sampling frequency
         self.current_experiment_id = None
         # Set by PC before acquisition begins
 

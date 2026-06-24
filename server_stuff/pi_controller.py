@@ -1,8 +1,8 @@
 """
 Controller layer
 
-Author: Undergraduate Research Project
-Date: 2026-06-18
+Author: Jack A. D'Amelio
+Date: 2026-06-24
 Internal Pi-Hardware Version: v0.1
 
 Purpose:
@@ -21,7 +21,7 @@ import threading
 import requests
 
 import hardware
-from controller_state import STATE
+from controller_state import STATE #imports the ControllerState created on import of controller_state
 
 
 # =========================================================
@@ -31,8 +31,8 @@ from controller_state import STATE
 # Runtime configuration parameters for streaming behavior
 CONFIG = {
     "pc_url": "http://127.0.0.1:8000/ingest",  # PC ingestion endpoint
-    "sample_rate_hz": 2,                       # hardware sampling frequency
-    "flush_interval_sec": 2.0                  # batch transmission interval
+    "sample_rate_hz": STATE.sample_rate_hz,                       # hardware sampling frequency
+    "flush_interval_sec": STATE.flush_interval_sec                  # flush = batch transmission interval
 }
 
 
@@ -90,7 +90,7 @@ def streaming_loop():
         # 3. CHECK IF BUFFER SHOULD BE FLUSHED
         # ---------------------------------------------------------
 
-        if time.time() - last_flush >= CONFIG["flush_interval_sec"]:
+        if time.time() - last_flush >= CONFIG["flush_interval_sec"]:# flush = batch transmission
 
             with STATE.buffer_lock:
 
