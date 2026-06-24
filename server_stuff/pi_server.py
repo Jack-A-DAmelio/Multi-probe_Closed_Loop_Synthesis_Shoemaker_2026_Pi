@@ -39,9 +39,11 @@ def set_experiment_config(config: dict):
 
     try:
         # Extract configuration fields safely from request payload
+        #first parameter looks for the key, if no such key, the second parameter is given by default
         experiment_id = config.get("experiment_id", None)
         enabled_probes = config.get("enabled_probes", [])
-
+        flush_interval_sec = config.get("flush_interval_sec", 2.0)
+        sample_rate_hz = config.get("sample_rate_hz", 100.0)
         # -----------------------------------------------------
         # UPDATE SHARED CONTROLLER STATE
         # -----------------------------------------------------
@@ -51,16 +53,22 @@ def set_experiment_config(config: dict):
         # - buffering logic
         controller.STATE.current_experiment_id = experiment_id
         controller.STATE.set_enabled_probes(enabled_probes)
-
+        controller.flush_interval_sec = flush_interval_sec
+        controller.sample_rate_hz = sample_rate_hz
         # Debug output for runtime verification
         print("\n--- EXPERIMENT CONFIG UPDATED ---")
         print("Experiment ID:", experiment_id)
         print("Enabled probes:", enabled_probes)
+        print("Flush interval (sec):", flush_interval_sec)
+        print("Sample rate (Hz):", sample_rate_hz)
+
 
         return {
             "status": "ok",
             "experiment_id": experiment_id,
-            "enabled_probes": enabled_probes
+            "enabled_probes": enabled_probes,
+            "flush_interval_sec": flush_interval_sec,
+            "sample_rate_hz": sample_rate_hz
         }
 
     except Exception as e:
