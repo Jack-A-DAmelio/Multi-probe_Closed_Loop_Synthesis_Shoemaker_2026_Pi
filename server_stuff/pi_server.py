@@ -14,7 +14,7 @@ Run this script from the above directory with:
 python -m server_stuff.pi_server
 """
 
-from fastapi import FastAPI
+from fastapi import Body, FastAPI
 import server_stuff.pi_controller as controller
 
 app = FastAPI()
@@ -25,7 +25,7 @@ app = FastAPI()
 # =========================================================
 
 @app.post("/config")
-def set_experiment_config(config: dict):
+def set_experiment_config(config: dict = Body(...)):
     """
     Updates experiment configuration from PC dashboard.
 
@@ -45,9 +45,8 @@ def set_experiment_config(config: dict):
         #first parameter looks for the key, if no such key, the second parameter is given by default
         experiment_id = config.get("experiment_id", None)
         enabled_probes = config.get("enabled_probes", [])
-        print(enabled_probes, "after")
-        flush_interval_sec = config.get("flush_interval_sec", 2.0)
-        sample_rate_hz = config.get("sample_rate_hz", 100.0)
+        flush_interval_sec = config.get("flush_interval_sec", "")
+        sample_rate_hz = config.get("sample_rate_hz", 1)
         # -----------------------------------------------------
         # UPDATE SHARED CONTROLLER STATE
         # -----------------------------------------------------
@@ -57,14 +56,14 @@ def set_experiment_config(config: dict):
         # - buffering logic
         controller.STATE.current_experiment_id = experiment_id
         controller.STATE.set_enabled_probes(enabled_probes)
-        controller.flush_interval_sec = flush_interval_sec
-        controller.sample_rate_hz = sample_rate_hz
+        controller.STATE.flush_interval_sec = flush_interval_sec
+        controller.STATE.sample_rate_hz = sample_rate_hz
         # Debug output for runtime verification
         print("\n--- EXPERIMENT CONFIG UPDATED ---")
-        print("Experiment ID:", experiment_id)
-        print("Enabled probes:", enabled_probes)
-        print("Flush interval (sec):", flush_interval_sec)
-        print("Sample rate (Hz):", sample_rate_hz)
+        print("Experiment ID:", controller.STATE.current_experiment_id)
+        print("Enabled probes:", controller.STATE.enabled_probes)
+        print("Flush interval (sec):", controller.STATE.flush_interval_sec)
+        print("Sample rate (Hz):", controller.STATE.sample_rate_hz)
 
 
         return {

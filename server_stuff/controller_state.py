@@ -64,11 +64,11 @@ class ControllerState:
         # Prevents race conditions between:
         # - streaming thread (writes)
         # - server endpoint (reads)
-        self.flush_interval_sec = 2.0 # flush interval = batch transmission interval
+        self.flush_interval_sec = 0.0 # flush interval = batch transmission interval
         # =========================================================
         # EXPERIMENT STATE
         # =========================================================
-        self.sample_rate_hz = 1  # hardware sampling frequency
+        self.sample_rate_hz = 0.0  # hardware sampling frequency
         self.current_experiment_id = None
         # Set by PC before acquisition begins
 
