@@ -17,6 +17,11 @@ python -m server_stuff.pi_server
 from fastapi import Body, FastAPI
 import server_stuff.pi_controller as controller
 
+from hardware_api.module_registry import MODULE_REGISTRY
+from hardware_api.factory import build_module
+
+from fastapi import FastAPI
+
 app = FastAPI()
 
 
@@ -78,6 +83,47 @@ def set_experiment_config(config: dict = Body(...)):
         # Catch unexpected config errors so server doesn't crash
         print("Config error:", e)
         return {"status": "error", "message": str(e)}
+
+
+
+
+
+@app.get("/modules/{name}/spec")
+def get_spec(name: str):
+    spec = MODULE_REGISTRY.get(name)
+
+    if not spec:
+        return {"status": "error", "message": "unknown module"}
+
+    return {
+        "status": "ok",
+        "module": spec.name,
+        "pins_required": spec.pins_required
+    }
+
+
+@app.post("/modules/{name}/build")
+def build(name: str, pin_map: dict):
+    """
+    Builds any registered module using provided pin mapping.
+    """
+
+    if name not in MODULE_REGISTRY:
+        return {"status": "error", "message": "unknown module"}
+
+    module = build_module(name, pin_map)
+    controller.STATE.active_modules[name] = module
+    return {
+        "status": "ok",
+        "module": name
+    }
+
+
+
+
+
+
+
 
 
 # =========================================================
