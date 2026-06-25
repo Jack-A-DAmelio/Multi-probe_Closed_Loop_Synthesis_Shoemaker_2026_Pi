@@ -85,7 +85,16 @@ def set_experiment_config(config: dict = Body(...)):
         return {"status": "error", "message": str(e)}
 
 
+@app.get("/modules")
+def get_modules():
+    """
+    Returns all available module types that can be instantiated.
+    """
 
+    return {
+        "status": "ok",
+        "modules": list(MODULE_REGISTRY.keys())
+    }
 
 
 @app.get("/modules/{name}/spec")

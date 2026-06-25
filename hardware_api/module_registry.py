@@ -1,6 +1,6 @@
 # hardware_api/registry.py
 
-from specs.LEDModuleSpec import LEDModuleSpec
+from hardware_api.specs.LEDModuleSpec import LEDModuleSpec
 
 MODULE_REGISTRY = {
     "led": LEDModuleSpec
