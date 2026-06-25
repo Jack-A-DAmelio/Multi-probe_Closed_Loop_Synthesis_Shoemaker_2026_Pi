@@ -82,6 +82,16 @@ class ControllerState:
         self.enabled_probes = []
         # List of active sensors included in streaming output
         # Example: ["temperature", "pressure"]
+        # =========================================================
+        # ACTIVE HARDWARE MODULES
+        # =========================================================
+
+        self.active_modules = {}
+        # Example:
+        # {
+        #   "led": LEDModule(...),
+        #   "temp": TempModule(...)
+        # }
 
     # =========================================================
     # PROBE FILTERING

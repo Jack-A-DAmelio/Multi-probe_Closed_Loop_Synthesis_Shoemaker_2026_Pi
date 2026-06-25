@@ -3,14 +3,6 @@ from module_abstract import Module
 from Pin_object import Pin
 
 
-class LEDModuleSpec:
-    """Defines what the module needs from the user."""
-
-    pins_required = {
-        "red": "Red LED output",
-        "green": "Green LED output",
-        "yellow": "Yellow LED output"
-    }
 
 class LEDModule(Module):
     """
