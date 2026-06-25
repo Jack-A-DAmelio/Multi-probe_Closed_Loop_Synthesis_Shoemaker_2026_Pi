@@ -1,18 +1,21 @@
 """
 Pi server (MINIMAL TEST VERSION)
 
-Author: Undergraduate Research Project
-Date: 2026-06-18
+Author: Jack A. D'Amelio
+Date: 2026-06-24
 Internal Pi-Hardware Version: v0.1
 
 Purpose:
 --------
 Receives control commands from the PC dashboard and updates
 shared controller state (experiment config + streaming control).
+
+Run this script from the above directory with:
+python -m server_stuff.pi_server
 """
 
-from fastapi import FastAPI
-import pi_controller as controller
+from fastapi import Body, FastAPI
+import server_stuff.pi_controller as controller
 
 app = FastAPI()
 
@@ -22,7 +25,7 @@ app = FastAPI()
 # =========================================================
 
 @app.post("/config")
-def set_experiment_config(config: dict):
+def set_experiment_config(config: dict = Body(...)):
     """
     Updates experiment configuration from PC dashboard.
 
@@ -39,9 +42,11 @@ def set_experiment_config(config: dict):
 
     try:
         # Extract configuration fields safely from request payload
+        #first parameter looks for the key, if no such key, the second parameter is given by default
         experiment_id = config.get("experiment_id", None)
         enabled_probes = config.get("enabled_probes", [])
-
+        flush_interval_sec = config.get("flush_interval_sec", "")
+        sample_rate_hz = config.get("sample_rate_hz", 1)
         # -----------------------------------------------------
         # UPDATE SHARED CONTROLLER STATE
         # -----------------------------------------------------
@@ -51,16 +56,22 @@ def set_experiment_config(config: dict):
         # - buffering logic
         controller.STATE.current_experiment_id = experiment_id
         controller.STATE.set_enabled_probes(enabled_probes)
-
+        controller.STATE.flush_interval_sec = flush_interval_sec
+        controller.STATE.sample_rate_hz = sample_rate_hz
         # Debug output for runtime verification
         print("\n--- EXPERIMENT CONFIG UPDATED ---")
-        print("Experiment ID:", experiment_id)
-        print("Enabled probes:", enabled_probes)
+        print("Experiment ID:", controller.STATE.current_experiment_id)
+        print("Enabled probes:", controller.STATE.enabled_probes)
+        print("Flush interval (sec):", controller.STATE.flush_interval_sec)
+        print("Sample rate (Hz):", controller.STATE.sample_rate_hz)
+
 
         return {
             "status": "ok",
             "experiment_id": experiment_id,
-            "enabled_probes": enabled_probes
+            "enabled_probes": enabled_probes,
+            "flush_interval_sec": flush_interval_sec,
+            "sample_rate_hz": sample_rate_hz
         }
 
     except Exception as e:
@@ -95,3 +106,29 @@ def stop():
     """
     controller.stop_streaming()
     return {"status": "stopped"}
+
+# =========================================================
+# ENTRY POINT
+# =========================================================
+
+if __name__ == "__main__":
+    """
+    Launches the Pi control server.
+
+    Host:
+        0.0.0.0
+        Allows connections from other machines on the network.
+
+    Port:
+        8001
+        Must match PI_URL used by the dashboard.
+    """
+
+    import uvicorn
+
+    uvicorn.run(
+        app,
+        host="0.0.0.0",
+        port=8001,
+        reload=False
+    )
