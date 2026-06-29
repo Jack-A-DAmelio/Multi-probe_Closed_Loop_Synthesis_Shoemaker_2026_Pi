@@ -18,7 +18,7 @@ Each pin stores:
 # PIN CLASS
 # =========================================================
 
-class Pin:
+class gpio_pin:
     """
     Represents a single hardware pin.
 
@@ -27,7 +27,7 @@ class Pin:
     - behavior is consistent across all usage contexts
     """
 
-    def __init__(self, address: int, name: str, description: str):
+    def __init__(self, address: int, name: str, direction = "in", description: str = ""):
         """
         Parameters:
             address (int):
@@ -42,6 +42,12 @@ class Pin:
 
         self.address = address
         self.name = name
+        if direction == null:
+            print("WARNING: Pin direction not specified")
+        if direction == "in":
+            self.direction = digitalio.Direction.OUTPUT
+        elif direction == "out":
+            digitalio.Direction.INPUT
         self.description = description
 
         # Optional cached state (useful for debugging or buffering)
@@ -79,7 +85,7 @@ class Pin:
     # WRITE OPERATION
     # =========================================================
 
-    def set(self, value):
+    def set(self, boolean_on_off):
         """
         Writes a value to the pin (if supported).
 
@@ -93,9 +99,7 @@ class Pin:
         """
 
         try:
-            self._hardware_write(value)
-            self._last_value = value
-            return True
+           self.value = boolean_on_off
 
         except Exception as e:
             print(f"[PIN WRITE ERROR] {self.name} ({self.address}): {e}")

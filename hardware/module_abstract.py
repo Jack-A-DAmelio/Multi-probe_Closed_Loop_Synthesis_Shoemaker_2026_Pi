@@ -91,3 +91,19 @@ class Module(ABC):
             - Prefer returning a dictionary for consistency
         """
         pass
+
+    @abstractmethod
+    def cleanup(self):
+        """
+        Cleans up resources used by the probe.
+
+        Returns:
+            None
+        """
+        pass
+
+        Notes:
+            - Each probe defines its own return format
+            - Prefer returning a dictionary for consistency
+        """
+        pass
