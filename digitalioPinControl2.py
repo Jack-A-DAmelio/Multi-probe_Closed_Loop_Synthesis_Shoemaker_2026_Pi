@@ -3,14 +3,14 @@ from module_abstract import Module
 from Pin_object import Pin
 
 
-class LEDModule(Module):
+class OneLEDModule(Module):
     """
     LED hardware module implementing the standard Module interface.
 
     Controls one LEDs using Blinka and CircuitPython digitalio.
     """
 
-    def __init__(self, pin_map: dict):
+    def __init__(self, pin_map: dict,name):
         """
         pin_map format:
         {
@@ -27,11 +27,11 @@ class LEDModule(Module):
         self._pins = {}
         self._state = {}
 
-        for led_name, gpio_number in pin_map.items():
-            pin = Pin(gpio_number, direction="out")
-
-            self._pins[led_name] = pin
-            self._state[led_name] = False
+        #for led_name, gpio_number in pin_map.items():
+            pin = Pin(gpio_number, direction="out")#all pins are initialized as off 
+            self._state[led_name] = False #therfore we initialize the state to off
+            self._pins[led_name] = pin #adds pin to directory of pins for this module
+            
 
     @property
     def name(self) -> str:
@@ -53,9 +53,11 @@ class LEDModule(Module):
         """
         if led_name not in self._pins:
             raise ValueError(f"Unknown LED: {led_name}")
+        else:
+            self._pins[led_name].set(value)
+            self._state[led_name] = bool(value)
 
-        self._pins[led_name].set(value)
-        self._state[led_name] = bool(value)
+        return 
 
 
 
@@ -68,6 +70,7 @@ class LEDModule(Module):
 
         self.set_led(led_name, False)
         time.sleep(interval)
+        return 0
 
     def cleanup(self):
         """
@@ -77,3 +80,4 @@ class LEDModule(Module):
             pin.set(False)
             pin.deinit()
             self._state[led_name] = False
+        return 0
