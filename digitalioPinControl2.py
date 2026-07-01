@@ -1,7 +1,7 @@
 """
 One LED module using Blinka/CircuitPython digital I/O.
 
-Author: You | Date: 2026-07-01 | Hardware Version: v0.1
+
 
 Purpose:
 --------
