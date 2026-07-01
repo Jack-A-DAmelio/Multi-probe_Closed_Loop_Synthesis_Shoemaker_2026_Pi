@@ -1,7 +1,7 @@
 """
 Abstract Module Base Class.
 
-Author: Jack A. D'Amelio | Date: 2026-06-24 | Hardware Version: v0.1
+Author: Jack A. D'Amelio | Date: 2026-07-1 | Hardware Version: v0.1
 
 Purpose:
 --------
