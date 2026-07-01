@@ -1,9 +1,9 @@
-from LEDModule import LEDModule
+from digitalioPinControl2 import OneLEDModule
 
 
 blink_interval = int(input("After how many seconds do you want to blink? "))
 
-led_module = LEDModule({
+led_module = OneLEDModule({
     "led1": 18
 })
 

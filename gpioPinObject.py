@@ -2,7 +2,7 @@ import board
 import digitalio
 
 
-class Pin:
+class GPIOPin:
     """
     Blinka/CircuitPython GPIO pin abstraction.
 
@@ -14,11 +14,10 @@ class Pin:
     For example, GPIO18 is physical pin 12 on the Raspberry Pi.
     """
 
-    
     def __init__(self, gpio_number: int, direction: str):
-       
+
         if direction not in ["in", "out"]:
-            raise ValueError("Direction must be either 'in' or 'out'.") 
+            raise ValueError("Direction must be either 'in' or 'out'.")
 
         self.gpio_number = gpio_number
         self.direction = direction
@@ -36,8 +35,8 @@ class Pin:
     def set(self, value: bool):
         if self.direction != "out":
             raise RuntimeError(f"GPIO{self.gpio_number} is not an output pin.")
-
-        self._pin.value = bool(value)
+        else:
+            self._pin.value = bool(value)
 
     def read(self) -> bool:
         return self._pin.value
