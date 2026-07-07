@@ -102,8 +102,8 @@ class Module(ABC):
         """
         pass
 
-        Notes:
-            - Each probe defines its own return format
-            - Prefer returning a dictionary for consistency
-        """
-        pass
+       # Notes:
+            #- Each probe defines its own return format
+            #- Prefer returning a dictionary for consistency
+       # """
+        #pass
