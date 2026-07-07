@@ -1,7 +1,7 @@
 #name: Gabriel 
 #date: 7/7/2026
 #Ai assistance: ChatGPT
-#Note: Majority of this code is from the adafruit tutorial just slightly tweaked to manage unit conversions, callibration and accept user input for taring 
+#Note: Majority of this code is from the adafruit tutorial just slightly tweaked to manage unit conversions, and terminate better"
 # SPDX-FileCopyrightText: 2023 Cedar Grove Maker Studios
 # SPDX-License-Identifier: MIT
 
