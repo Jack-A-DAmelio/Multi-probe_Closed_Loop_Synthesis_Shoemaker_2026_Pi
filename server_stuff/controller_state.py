@@ -38,19 +38,7 @@ class ControllerState:
 
     def __init__(self):
 
-        # =========================================================
-        # STREAMING STATE
-        # =========================================================
-
-        # =========================================================
-        # PC URL
-        # =========================================================
-        self.pc_url = "" # PC ingestion endpoint
-
-        self.streaming_active = False
-        # Flag checked by streaming loop to determine whether to run
-
-       
+         
         # =========================================================
         # HARDWARE CONFIGURATION
         # =========================================================
