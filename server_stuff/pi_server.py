@@ -43,7 +43,7 @@ MODULE_REGISTRY = {
 
 @app.post("/configure")
 def configure_modules(data: dict = Body(...)):
-
+    print("oooo Configuring modules with data:", data)
     global PI_MODULES
 
     # clear previous configuration
@@ -57,7 +57,7 @@ def configure_modules(data: dict = Body(...)):
 
 
     for module_name, module_data in modules.items():
-
+        print("Loading module:", module_name)
         if module_name not in MODULE_REGISTRY:
 
             return {
@@ -104,10 +104,11 @@ def measure():
 
 
     for name, module in PI_MODULES.items():
+        print("Measuring module:", name)
 
         measurements[name] = module.measure()
 
-
+        print("Measuring module:", name, measurements[name])
 
     return {
         "timestamp": timestamp,
@@ -129,7 +130,7 @@ def cleanup():
     for name, module in PI_MODULES.items():
 
         if hasattr(module, "cleanup"):
-
+            print("Cleaning up module:", name)
             module.cleanup()
 
 
