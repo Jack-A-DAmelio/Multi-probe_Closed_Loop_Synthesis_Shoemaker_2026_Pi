@@ -1,43 +1,145 @@
 """
-Pi server (MINIMAL TEST VERSION)
+Pi server
 
-Author: Jack A. D'Amelio
-Date: 2026-06-24
-Internal Pi-Hardware Version: v0.1
-
-Purpose:
---------
-Receives control commands from the PC dashboard and updates
-shared controller state (experiment config + streaming control).
-
-Run this script from the above directory with:
-python -m server_stuff.pi_server
+Receives experiment configuration from PC,
+creates hardware modules, performs measurements,
+and handles cleanup.
 """
 
-from fastapi import Body, FastAPI
-import server_stuff.pi_controller as controller
+from fastapi import FastAPI, Body
+import time
 
-from hardware_api.module_registry import MODULE_REGISTRY
-from hardware_api.factory import build_module
 
-from fastapi import FastAPI
+
 
 app = FastAPI()
 
 
 # =========================================================
-# EXPERIMENT CONFIGURATION ENDPOINT
+# PI RUNTIME STATE
+# =========================================================
+from hardware.dummy_modules import (
+    DummyCamera,
+    DummyScale,
+    DummyThermocouple
+)
+
+
+MODULE_REGISTRY = {
+
+    "camera": DummyCamera,
+
+    "scale": DummyScale,
+
+    "thermocouple": DummyThermocouple
+
+}
+
+
+
+# =========================================================
+# CONFIGURATION
 # =========================================================
 
-@app.post("/create_modules")
-def create_modules():
-    return 
+@app.post("/configure")
+def configure_modules(data: dict = Body(...)):
 
-@app.get("/measure")
+    global PI_MODULES
+
+    # clear previous configuration
+    PI_MODULES = {}
+
+
+    modules = data.get(
+        "modules",
+        {}
+    )
+
+
+    for module_name, module_data in modules.items():
+
+        if module_name not in MODULE_REGISTRY:
+
+            return {
+                "error": f"Unknown module: {module_name}"
+            }
+
+
+        module_class = MODULE_REGISTRY[module_name]
+
+
+        pin_directory = module_data[
+            "pin_directory"
+        ]
+
+
+        # Construct hardware object
+        module_object = module_class(
+            pin_directory
+        )
+
+
+        PI_MODULES[module_name] = module_object
+
+
+
+    return {
+        "status": "configured",
+        "modules": list(PI_MODULES.keys())
+    }
+
+
+
+# =========================================================
+# MEASUREMENT
+# =========================================================
+
+@app.post("/measure")
 def measure():
 
+    timestamp = time.time()
 
-    return
+
+    measurements = {}
+
+
+    for name, module in PI_MODULES.items():
+
+        measurements[name] = module.measure()
+
+
+
+    return {
+        "timestamp": timestamp,
+        "measurements": measurements
+    }
+
+
+
+# =========================================================
+# CLEANUP
+# =========================================================
+
+@app.post("/cleanup")
+def cleanup():
+
+    global PI_MODULES
+
+
+    for name, module in PI_MODULES.items():
+
+        if hasattr(module, "cleanup"):
+
+            module.cleanup()
+
+
+
+    PI_MODULES = {}
+
+
+    return {
+        "status": "cleaned"
+    }
 
 
 
@@ -46,17 +148,6 @@ def measure():
 # =========================================================
 
 if __name__ == "__main__":
-    """
-    Launches the Pi control server.
-
-    Host:
-        0.0.0.0
-        Allows connections from other machines on the network.
-
-    Port:
-        8001
-        Must match PI_URL used by the dashboard.
-    """
 
     import uvicorn
 
