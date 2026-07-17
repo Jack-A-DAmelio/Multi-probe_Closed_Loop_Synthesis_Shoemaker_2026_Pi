@@ -1,58 +1,44 @@
 """
 Abstract Module Base Class.
 
-Author: Jack A. D'Amelio | Date: 2026-07-1 | Hardware Version: v0.1
+Author: Jack A. D'Amelio | Date: 2026-06-24 | Hardware Version: v0.1
 
 Purpose:
 --------
-Defines the common interface that every hardware module in the
-control system must implement.
+Defines a standard interface for all hardware probes in the system.
 
-Using an abstract base class ensures that all modules expose the
-same set of properties and methods. This allows the controller to
-interact with different hardware (LEDs, sensors, motors, etc.)
-without needing to know their implementation details.
-
-All modules must implement:
+All probes must implement:
 - name (str): human-readable identifier
 - pins (dict): hardware pin mapping
-- read() (function): returns the current measurement or state
-- cleanup() (function): releases hardware resources before shutdown
+- read() (function): returns current measurement
+
+This ensures consistent behavior across all sensor implementations
+and allows the controller to treat all probes uniformly.
 """
 
 from abc import ABC, abstractmethod
 
 
 # =========================================================
-# ABSTRACT MODULE BASE CLASS
+# ABSTRACT PROBE BASE CLASS
 # =========================================================
 
 class Module(ABC):
     """
     Base class for all hardware modules.
 
-    Every hardware module should inherit from this class.
-    Python prevents subclasses from being instantiated until
-    all abstract methods have been implemented, ensuring a
-    consistent interface throughout the project.
+    This class enforces a common interface for:
+    - identification (name)
+    - hardware configuration (pins)
+    - data acquisition (read)
     """
 
     def __init__(self):
         """
-        Base initializer for shared module setup.
+        Base initializer for shared probe setup.
 
-        Parameters:
-            None
-
-        Returns:
-            None
-
-        Currently empty, but reserved for future shared
-        functionality such as:
-        - logging registration
-        - hardware initialization
-        - calibration setup
-        - configuration validation
+        Currently empty, but reserved for future shared functionality
+        such as calibration hooks or logging registration.
         """
         pass
 
@@ -64,11 +50,8 @@ class Module(ABC):
     @abstractmethod
     def name(self) -> str:
         """
-        Returns the human-readable name of the module.
-
         Returns:
-            str: Module name displayed to users and used
-                throughout the control software.
+            str: Human-readable name of the probe
         """
         pass
 
@@ -80,18 +63,14 @@ class Module(ABC):
     @abstractmethod
     def pins(self) -> dict:
         """
-        Returns the hardware pin assignments used by the module.
-
         Returns:
-            dict: Dictionary describing hardware pin connections.
+            dict: Dictionary describing hardware pin connections
 
         Example:
             {
                 "sda": 2,
                 "scl": 3
             }
-
-        The exact keys depend on the hardware implementation.
         """
         pass
 
@@ -102,34 +81,29 @@ class Module(ABC):
     @abstractmethod
     def read(self):
         """
-        Reads the current state or measurement from the module.
+        Reads a measurement from the probe.
 
         Returns:
-            dict | float | int | object:
-                Module-specific measurement data.
+            dict | float | int | structured measurement object
 
         Notes:
-            - Each module defines its own return format.
-            - Returning a dictionary is recommended because it
-              makes combining data from multiple modules easier.
+            - Each probe defines its own return format
+            - Prefer returning a dictionary for consistency
         """
         pass
-
-    # =========================================================
-    # REQUIRED INTERFACE: RESOURCE CLEANUP
-    # =========================================================
 
     @abstractmethod
     def cleanup(self):
         """
-        Releases any hardware resources used by the module.
-
-        This method is called before shutting down the program or
-        unloading a module. It provides an opportunity to safely
-        reset GPIO pins, close communication interfaces, or stop
-        background processes.
+        Cleans up resources used by the probe.
 
         Returns:
             None
         """
         pass
+
+       # Notes:
+            #- Each probe defines its own return format
+            #- Prefer returning a dictionary for consistency
+       # """
+        #pass

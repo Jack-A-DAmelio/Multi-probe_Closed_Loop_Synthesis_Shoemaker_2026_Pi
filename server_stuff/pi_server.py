@@ -18,20 +18,15 @@ app = FastAPI()
 # =========================================================
 # PI RUNTIME STATE
 # =========================================================
-from hardware.dummy_modules import (
-    DummyCamera,
-    DummyScale,
-    DummyThermocouple
-)
-
+from hardware.scale.scaleModule2 import ScaleModule
+from hardware.thermocouple.tempProbeModule2 import TempProbeModule
 
 MODULE_REGISTRY = {
 
-    "camera": DummyCamera,
 
-    "scale": DummyScale,
+    "scale": ScaleModule,
 
-    "thermocouple": DummyThermocouple
+    "thermocouple": TempProbeModule
 
 }
 
