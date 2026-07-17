@@ -50,12 +50,29 @@ def cleanup():
     print("PWM released.")
 
 
+def get_runtime():
+    """Prompt the user for pump runtime in seconds."""
+    while True:
+        try:
+            runtime = float(input("How long should the pump run (seconds)? "))
+            if runtime <= 0:
+                print("Please enter a positive number.")
+                continue
+            return runtime
+        except ValueError:
+            print("Invalid input. Please enter a number.")
+
+
 def main():
-    print("Starting pump...")
+    runtime = get_runtime()
+
+    print(f"\nStarting pump for {runtime} seconds...")
     set_speed(PUMP_SPEED)
 
-    while True:
-        time.sleep(1)
+    time.sleep(runtime)
+
+    print("Time elapsed. Stopping pump...")
+    stop()
 
 
 if __name__ == "__main__":
