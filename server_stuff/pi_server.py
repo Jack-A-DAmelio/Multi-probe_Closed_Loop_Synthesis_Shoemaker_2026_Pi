@@ -1,6 +1,10 @@
 """
 Pi server
 
+
+
+
+
 Receives experiment configuration from PC,
 creates hardware modules, performs measurements,
 and handles cleanup.
@@ -18,7 +22,9 @@ app = FastAPI()
 # =========================================================
 # PI RUNTIME STATE
 # =========================================================
-from hardware.scale.scaleModule2 import ScaleModule
+
+
+from hardware.balance.scaleModule2 import ScaleModule
 from hardware.thermocouple.tempProbeModule2 import TempProbeModule
 
 MODULE_REGISTRY = {
@@ -51,7 +57,9 @@ def configure_modules(data: dict = Body(...)):
     )
 
 
+    print(data , "-------") 
     for module_name, module_data in modules.items():
+
 
         if module_name not in MODULE_REGISTRY:
 

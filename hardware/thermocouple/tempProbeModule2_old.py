@@ -1,23 +1,17 @@
 """
 MAX31856 temperature probe module, including type K.
 
-This module receives one flat configuration dictionary.
+This file contains both:
+1. The low-level MAX31856 hardware setup.
+2. The high-level methods used by the runner.
 
-The dictionary contains:
-
-- the probe name
-- power and ground wiring information
-- SCK, MISO, and MOSI wiring information
-- the chip select GPIO number
-- the thermocouple type
-- the measurement interval
+The user supplies a configuration dictionary. The class gets the probe
+name and wiring information from that dictionary, then converts the
+configured CS GPIO number into the board.D pin object required by Blinka.
 
 The power, ground, SCK, MISO, and MOSI entries are stored for wiring
-reference.
-
-board.SPI() automatically selects the Raspberry Pi default SPI pins.
-
-The cs_gpio value is used to create the configurable chip select pin.
+reference. board.SPI() automatically uses the Raspberry Pi default SPI
+pins. Only the CS GPIO number must be converted manually.
 """
 
 import time
@@ -46,30 +40,11 @@ class TempProbeModule:
     TEMPERATURE_RESOLUTION_C = 0.0078125
 
     def __init__(self, probe_config: dict):
-        """
-        Create one MAX31856 temperature probe.
-
-        Parameters
-        ----------
-        probe_config : dict
-            Flat configuration dictionary from
-            tempProbeDirectory2.py.
-        """
-
-        # Make sure the configuration is a dictionary.
         if not isinstance(probe_config, dict):
-            raise TypeError(
-                "probe_config must be a dictionary."
-            )
-
-        # =====================================================
-        # VALIDATE PROBE NAME
-        # =====================================================
+            raise TypeError("probe_config must be a dictionary.")
 
         if "name" not in probe_config:
-            raise ValueError(
-                "probe_config must contain a 'name'."
-            )
+            raise ValueError("probe_config must contain a 'name'.")
 
         name = probe_config["name"]
 
@@ -78,34 +53,45 @@ class TempProbeModule:
                 "probe_config['name'] must be a nonempty string."
             )
 
-        # =====================================================
-        # VALIDATE CHIP SELECT GPIO
-        # =====================================================
-
-        if "cs_gpio" not in probe_config:
+        if "pins" not in probe_config:
             raise ValueError(
-                "probe_config must contain a 'cs_gpio' entry."
+                "probe_config must contain a 'pins' dictionary."
             )
 
-        cs_gpio_number = probe_config["cs_gpio"]
+        pin_map = probe_config["pins"]
 
-        if (
-            isinstance(cs_gpio_number, bool)
-            or not isinstance(cs_gpio_number, int)
+        if not isinstance(pin_map, dict):
+            raise TypeError(
+                "probe_config['pins'] must be a dictionary."
+            )
+
+        if "cs" not in pin_map:
+            raise ValueError(
+                "probe_config['pins'] must contain a 'cs' entry."
+            )
+
+        cs_config = pin_map["cs"]
+
+        if not isinstance(cs_config, dict):
+            raise TypeError(
+                "probe_config['pins']['cs'] must be a dictionary."
+            )
+
+        if "gpio" not in cs_config:
+            raise ValueError(
+                "probe_config['pins']['cs'] must contain a 'gpio' number."
+            )
+
+        cs_gpio_number = cs_config["gpio"]
+
+        if isinstance(cs_gpio_number, bool) or not isinstance(
+            cs_gpio_number,
+            int,
         ):
             raise TypeError(
-                "probe_config['cs_gpio'] must be an integer "
-                "GPIO number."
+                "probe_config['pins']['cs']['gpio'] must be an "
+                "integer GPIO number."
             )
-
-        if cs_gpio_number < 0:
-            raise ValueError(
-                "probe_config['cs_gpio'] cannot be negative."
-            )
-
-        # =====================================================
-        # VALIDATE THERMOCOUPLE TYPE
-        # =====================================================
 
         thermocouple_type = probe_config.get(
             "thermocouple_type",
@@ -113,16 +99,12 @@ class TempProbeModule:
         )
 
         if not isinstance(thermocouple_type, str):
-            raise TypeError(
-                "thermocouple_type must be a string."
-            )
+            raise TypeError("thermocouple_type must be a string.")
 
         normalized_type = thermocouple_type.strip().upper()
 
         if normalized_type not in THERMOCOUPLE_TYPES:
-            supported_types = ", ".join(
-                THERMOCOUPLE_TYPES
-            )
+            supported_types = ", ".join(THERMOCOUPLE_TYPES)
 
             raise ValueError(
                 f"Unsupported thermocouple type "
@@ -130,26 +112,20 @@ class TempProbeModule:
                 f"Choose one of: {supported_types}."
             )
 
-        # =====================================================
-        # STORE CONFIGURATION
-        # =====================================================
-
         self._name = name.strip()
-
-        # Store a copy of the entire flat directory.
-        #
-        # This keeps all the power, ground, SPI, CS, and other
-        # bookkeeping information without needing WIRING_KEYS.
         self._config = dict(probe_config)
-
+        self._pins = {
+            pin_name: (
+                dict(pin_details)
+                if isinstance(pin_details, dict)
+                else pin_details
+            )
+            for pin_name, pin_details in pin_map.items()
+        }
         self._thermocouple_type = normalized_type
         self._last_measurement = None
         self._measurement_started = False
         self._cleaned_up = False
-
-        # =====================================================
-        # CREATE CHIP SELECT PIN
-        # =====================================================
 
         try:
             cs_board_pin = getattr(
@@ -163,32 +139,13 @@ class TempProbeModule:
                 f"board.D{cs_gpio_number} pin on this board."
             ) from error
 
-        # =====================================================
-        # CREATE SPI BUS
-        # =====================================================
-
-        # board.SPI() automatically uses the Raspberry Pi's
-        # default SPI pins:
-        #
-        # SCK  = GPIO11
-        # MOSI = GPIO10
-        # MISO = GPIO9
-        #
-        # It does not read these numbers from probe_config.
+        # board.SPI() uses the Raspberry Pi default SCK, MOSI, and MISO pins.
         self._spi = board.SPI()
 
-        # cs_gpio is the only pin number from the configuration
-        # that this module directly turns into a pin object.
-        self._cs = digitalio.DigitalInOut(
-            cs_board_pin
-        )
-
+        # CS is the one configurable digital pin used directly by this class.
+        self._cs = digitalio.DigitalInOut(cs_board_pin)
         self._cs.direction = digitalio.Direction.OUTPUT
         self._cs.value = True
-
-        # =====================================================
-        # CREATE MAX31856 SENSOR OBJECT
-        # =====================================================
 
         try:
             self._sensor = adafruit_max31856.MAX31856(
@@ -206,31 +163,29 @@ class TempProbeModule:
 
     @property
     def name(self) -> str:
-        """Return the probe name."""
-
+        """Return the probe name stored in the directory."""
         return self._name
 
     @property
     def pins(self) -> dict:
-        """
-        Return a copy of the flat configuration dictionary.
-
-        This property is retained so the existing runner can continue
-        using temp_probe.pins without needing changes.
-        """
-
-        return dict(self._config)
+        """Return a copy of the probe wiring dictionary."""
+        return {
+            pin_name: (
+                dict(pin_details)
+                if isinstance(pin_details, dict)
+                else pin_details
+            )
+            for pin_name, pin_details in self._pins.items()
+        }
 
     @property
     def thermocouple_type(self) -> str:
         """Return the configured thermocouple type."""
-
         return self._thermocouple_type
 
     @property
     def last_measurement(self):
         """Return the most recent measurement, or None."""
-
         if self._last_measurement is None:
             return None
 
@@ -238,33 +193,24 @@ class TempProbeModule:
 
     def _require_active(self) -> None:
         """Prevent hardware access after cleanup."""
-
         if self._cleaned_up:
             raise RuntimeError(
                 f"{self._name} has already been cleaned up."
             )
 
     def initiate_one_shot_measurement(self) -> None:
-        """Start a new MAX31856 measurement."""
-
+        """Start a new MAX31856 measurement and return immediately."""
         self._require_active()
-
         self._sensor.initiate_one_shot_measurement()
-
         self._measurement_started = True
 
     def one_shot_pending(self) -> bool:
         """Return True while a one-shot measurement is running."""
-
         self._require_active()
-
-        return bool(
-            self._sensor.oneshot_pending
-        )
+        return bool(self._sensor.oneshot_pending)
 
     def wait_for_measurement(self) -> None:
-        """Wait until the current measurement completes."""
-
+        """Wait until a previously started measurement completes."""
         self._require_active()
 
         if not self._measurement_started:
@@ -276,10 +222,7 @@ class TempProbeModule:
             time.sleep(0.01)
 
     def read_completed_raw_temperature_code(self) -> int:
-        """
-        Read the signed 19-bit raw temperature code.
-        """
-
+        """Read the signed 19-bit raw code from a completed measurement."""
         self._require_active()
 
         if not self._measurement_started:
@@ -307,96 +250,55 @@ class TempProbeModule:
             | (low_byte >> 5)
         )
 
-        # Convert the unsigned 19-bit result into a signed value.
         if raw_code & 0x40000:
             raw_code -= 0x80000
 
         self._measurement_started = False
-
         return raw_code
 
     def read_raw_temperature_code(self) -> int:
-        """Take one measurement and return its raw code."""
-
+        """Start one measurement, wait, and return its raw code."""
         self.initiate_one_shot_measurement()
         self.wait_for_measurement()
-
         return self.read_completed_raw_temperature_code()
 
     @classmethod
-    def raw_code_to_celsius(
-        cls,
-        raw_code: int,
-    ) -> float:
-        """Convert one raw code into degrees Celsius."""
+    def raw_code_to_celsius(cls, raw_code: int) -> float:
+        """Convert one signed raw code into degrees Celsius."""
+        if isinstance(raw_code, bool) or not isinstance(raw_code, int):
+            raise TypeError("raw_code must be an integer.")
 
-        if (
-            isinstance(raw_code, bool)
-            or not isinstance(raw_code, int)
-        ):
-            raise TypeError(
-                "raw_code must be an integer."
-            )
-
-        return (
-            raw_code
-            * cls.TEMPERATURE_RESOLUTION_C
-        )
+        return raw_code * cls.TEMPERATURE_RESOLUTION_C
 
     def read(self) -> dict:
-        """
-        Take one measurement and return both the raw code
-        and the converted Celsius temperature.
-        """
-
+        """Take one measurement and return raw and Celsius readings."""
         raw_code = self.read_raw_temperature_code()
 
         measurement = {
             "raw_code": raw_code,
-            "temperature_c": self.raw_code_to_celsius(
-                raw_code
-            ),
+            "temperature_c": self.raw_code_to_celsius(raw_code),
         }
 
         self._last_measurement = dict(measurement)
-
         return dict(measurement)
 
     def read_temperature_celsius(self) -> float:
-        """Take one measurement and return degrees Celsius."""
-
+        """Take one measurement and return only degrees Celsius."""
         measurement = self.read()
-
         return measurement["temperature_c"]
-
-    def measure(self) -> float:
-        """
-        Take one measurement for compatibility with pi_server.py.
-        """
-
-        return self.read_temperature_celsius()
 
     def read_reference_temperature_celsius(self) -> float:
         """Return the MAX31856 cold-junction temperature."""
-
         self._require_active()
-
-        return float(
-            self._sensor.reference_temperature
-        )
+        return float(self._sensor.reference_temperature)
 
     def read_faults(self) -> dict:
-        """Return the MAX31856 fault states."""
-
+        """Return a dictionary of MAX31856 fault states."""
         self._require_active()
-
-        return dict(
-            self._sensor.fault
-        )
+        return dict(self._sensor.fault)
 
     def cleanup(self) -> None:
-        """Release the chip-select pin."""
-
+        """Release the chip-select pin owned by this object."""
         if self._cleaned_up:
             return
 

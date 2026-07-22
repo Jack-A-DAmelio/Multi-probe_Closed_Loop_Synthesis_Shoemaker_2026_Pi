@@ -20,7 +20,7 @@ import time
 import board
 from cedargrove_nau7802 import NAU7802
 
-from module_abstract import Module
+from ..module_abstract import Module
 
 
 class ScaleModule(Module):
